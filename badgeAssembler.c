@@ -151,8 +151,13 @@ Addr jr(Byte nn)
 }
 Addr jabs(Addr dest)
 {
-	pb(0xd00| dest>>4);
-	return moven(0xd,(dest&0xf) );
+	pb(0xe00| dest>>4);
+	return movn(0xd,(dest&0xf) );
+}
+Addr jsr(Addr dest)
+{
+	pb(0xe00| dest>>4);
+	return movn(0xc,(dest&0xf) );
 }
 Addr rrc(Byte nn)
 {
