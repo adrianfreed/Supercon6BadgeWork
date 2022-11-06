@@ -1,6 +1,8 @@
 #include <stdio.h>
 
-// Pr
+// Simple Assembler for the Supercon.6 badge
+// Adrian Freed 2022
+
 
 typedef unsigned char Nibble;
 typedef unsigned char Byte;
@@ -16,6 +18,7 @@ void zeroPC(char *s)
 	pc = 0;
 	printf("%s\n", s);
 }
+// output the binary version in a way that is helpful to toggle in
 int pb(unsigned n)
 {
 	for(int i=0;i<8;++i)
