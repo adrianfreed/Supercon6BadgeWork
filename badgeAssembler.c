@@ -1,47 +1,11 @@
 #include <stdio.h>
-
+#include "badgeAssembler.h"
+#include "badgeoutput.h"
 // Simple Assembler for the Supercon.6 badge
 // Adrian Freed 2022
 
 
-typedef unsigned char Nibble;
-typedef unsigned char Byte;
-typedef int Addr;
-
-typedef Nibble var;
-
-
-int pc = 0; // program counter - to track code location for relative move calculations
-
-void zeroPC(char *s)
-{	
-	pc = 0;
-	printf("%s\n", s);
-}
-// output the binary version in a way that is helpful to toggle in
-int pb(unsigned n)
-{
-	for(int i=0;i<8;++i)
-	{
-		printf("%s", (pc & (1<< (8-1-i)))?"1":"0");
-		if(i==3 || i==7)
-			printf(" ");
-	}
-	printf(":    ");
-
-	for(int i=0;i<12;++i)
-	{
-		printf("%s", (n & (1<< (12-1-i)))?"1":"0");
-		if(i==3 || i==7)
-			printf(" ");
-	}
-	printf("\n");
-	return pc++;
-}
-void comment(char *s)
-{
-	printf("%s\n", s);
-}
+extern int pc;
 // Names
 const Nibble Carry = 0;
 const Nibble Zed = 2;
@@ -65,13 +29,90 @@ const Nibble Rpch = 15;
 
 // each functions emits the correct opcode 
 // and returns the position of the PC
+Addr cp(Nibble reg)
+{
+	return pb(0x000 | (reg % 16));
+}
+Addr addR0(Nibble n)
+{
+	return pb(0x010 | (n % 16));
+}
 Addr inc(Nibble reg)
 {
-	return pb(0x20 | (reg % 16));
+	return pb(0x020 | (reg % 16));
 }
+Addr dec(Nibble reg)
+{
+	return pb(0x030 | (reg % 16));
+}
+Addr dsz( Nibble ry)
+{	
+	return 	pb(0x040 | ry);
+}
+Addr orR0(Nibble n)
+{
+	return pb(0x050 | (n % 16));
+}
+
+Addr andR0(Nibble n)
+{
+	return pb(0x060 | (n % 16));
+}
+Addr xorR0(Nibble n)
+{
+	return pb(0x070 | (n % 16));
+}
+Addr exr(Nibble n)
+{
+	return pb(0x080 | (n % 16));
+}
+Addr bit(Nibble reg, Nibble n)
+{
+	reg %= 4;
+	n %=4;
+	return 	pb(0x090| (reg<<2) | n);
+}
+
+Addr bset(Nibble reg, Nibble bit)
+{	
+	if(reg>3 || bit > 3)
+	{
+		printf("warning: bset register and bit have to be less than 4\n");
+	}
+	return pb(0x0a0 | (reg<<2) || bit);
+}
+Addr bclr(Nibble reg, Nibble bit)
+{	
+	if(reg>3 || bit > 3)
+	{
+		printf("warning: bset register and bit have to be less than 4\n");
+	}
+	return pb(0x0b0 | (reg<<2) || bit);
+}
+Addr btgl(Nibble reg, Nibble bit)
+{	
+	if(reg>3 || bit > 3)
+	{
+		printf("warning: bset register and bit have to be less than 4\n");
+	}
+	return pb(0x0c0 | (reg<<2) || bit);
+}
+
+
+Addr rrc(Byte nn)
+{
+	return 	pb(0x0d0| nn);
+}
+
+Addr ret(Byte nn)
+{
+	return 	pb(0x0e0| nn);
+}
+
 Addr skip1(Nibble flag) {
 	return pb(0x0f0 | (flag<<2) |1);
 }
+
 Addr skip2(Nibble flag) {
 	return 	pb(0x0f0 | (flag<<2) |2);
 }
@@ -81,18 +122,9 @@ Addr skip3(Nibble flag) {
 Addr skip4(Nibble flag) {
 	return 	pb(0x0f0 | (flag<<2) |0);
 }
-Addr mov(Nibble rx, Nibble ry)
-{	
-	return 	pb(0x800| (rx<<4) | ry);
-}
-Addr xor(Nibble rx, Nibble ry)
-{	
-	return 	pb(0x700| (rx<<4) | ry);
-}
-Addr xorR0n( Nibble nn)
-{	
-	return 	pb(0x70|  nn);
-}
+
+
+
 Addr add(Nibble rx, Nibble ry)
 {	
 	return 	pb(0x100| (rx<<4) | ry);
@@ -117,13 +149,26 @@ Addr and(Nibble rx, Nibble ry)
 {	
 	return 	pb(0x600| (rx<<4) | ry);
 }
-Addr dsz( Nibble ry)
+Addr xor(Nibble rx, Nibble ry)
 {	
-	return 	pb(0x040 | ry);
+	return 	pb(0x700| (rx<<4) | ry);
+}
+Addr mov(Nibble rx, Nibble ry)
+{	
+	return 	pb(0x800| (rx<<4) | ry);
 }
 Addr movn(Nibble rx, Nibble constant)
 {	
 	return 	pb(0x900| (rx<<4) | constant);
+}
+
+Addr movtoi(Nibble x, Nibble y)   //MOV [XY], R0
+{	
+	return 	pb(0xa00| (x<<4) | y);
+}
+Addr movfromi(Nibble x, Nibble y)  //MOV R0,[XY]
+{	
+	return 	pb(0xb00| (x<<4) | y);
 }
 Addr movto(Byte location)   //MOV [NN], R0
 {	
@@ -133,14 +178,6 @@ Addr movfrom(Byte location)  //MOV R0,[NN]
 {	
 	return 	pb(0xd00| location);
 }
-Addr movtoi(Nibble x, Nibble y)   //MOV [XY], R0
-{	
-	return 	pb(0xa00| (x<<4) | y);
-}
-Addr movfromi(Nibble x, Nibble y)  //MOV R0,[XY]
-{	
-	return 	pb(0xb00| (x<<4) | y);
-}
 Addr movpc(Byte nn)
 {
 	return 	pb(0xe00| nn);
@@ -149,26 +186,13 @@ Addr jr(Byte nn)
 {
 	return 	pb(0xf00| nn);
 }
-Addr jabs(Addr dest)
-{
-	pb(0xe00| dest>>4);
-	return movn(0xd,(dest&0xf) );
-}
+
 Addr jsr(Addr dest)
 {
 	pb(0xe00| dest>>4);
 	return movn(0xc,(dest&0xf) );
 }
-Addr rrc(Byte nn)
-{
-	return 	pb(0xd0| nn);
-}
-Addr bit(Nibble reg, Nibble n)
-{
-	reg %= 4;
-	n %=4;
-	return 	pb(0x90| (reg<<2) | n);
-}
+
 
 Addr outn(Nibble n)
 {
@@ -179,13 +203,27 @@ Addr out( Nibble reg)
 	return mov(ROut, reg);
 }
 // pseudo codes
+Addr jabs(Addr dest)
+{
+	pb(0xe00| dest>>4);
+	return movn(0xd,(dest&0xf) );
+}
 Addr nop()
 {
 	return mov(R0, R0);
 }
+Addr lsr(Nibble reg)
+{
+	andR0(0);
+	return rrc(reg);
+}
+Addr cplR0()
+{
+	return xorR0(0xf);
+}
 Addr jumpto(unsigned dest)
 {
-	jr(0xff & (dest- pc-1));
+	return jr(0xff & (dest- pc-1));
 }
 
 // utilities for looping
@@ -204,205 +242,4 @@ Addr endrepeat()
 {
 	dsz(regstack[--astackp]);
 	return jumpto(astack[astackp]);
-}
-
-SimpleExamples()
-{
-
-	zeroPC("counter to output port");
-	{			
-		Addr back = inc(R0);
-					mov(ROut, R0);
-					beginrepeat(R8, 16);	
-						beginrepeat(R1, 16);
-							nop();
-						endrepeat();
-					endrepeat();
-					jumpto( back);
-	}				
-}
-
-
-// Examples for  DAC/Comparator board with custom chip for the badge
-const Nibble dClock = 1; // clock the 8-bit down counter feeding the DAC
-const Nibble dReset = 2; // reset the counter
-const Nibble dPulldown = 4; // this turns off an 20mA open drain transistor
-							// use this to drive LEDs or discharge caps for measurement
-const Nibble dBank = 8; // select which of the 2 banks
-						//  of 3 comparators to output to the In port of the badge
-Addr countSetBits(Nibble reg)
-{
-	skip1(notflag(Zed));
-	return inc(reg);
-}
-
-CustomDacExamples()
-{
-
-zeroPC("Square tone generator");
-{			movn(R0, dBank);
-	Addr back = xor(ROut, R0);
-				jumpto( back);
-}				
-zeroPC("Pulse generator");
-{
-				movn(R0, dBank);
-	Addr back = xor(ROut, R0);
-				xor(ROut, R0);
-				nop();
-				nop();
-				nop();
-				nop();
-				nop();
-				nop();
-				jumpto( back);
-}	
-zeroPC("DAC Sawtooth");
-{
-				movn(ROut,dReset ); // reset the Dac Counter
-				movn(ROut, 0 );
-				movn(R0,dClock );
-	Addr back =	xor(ROut, R0);      // clock the Dac Counter
-				xor(ROut, R0);
-				jumpto(back);
-}
-
-zeroPC("Comparators as PWM");
-{
-				movn(ROut,dReset ); // reset the Dac Counter
-				movn(ROut, 0 );
-				movn(R1, dClock);
-				
-
-Addr toggleclock = movn(ROut,0);
-				xor(ROut, R1);
-				xor(ROut, R1);
-				mov(R2, RIn);
-				movn(ROut,dBank);
-				mov(R3, RIn);				
-				jumpto(toggleclock);
-}				
-zeroPC("Single 4-bit ADC Value");
-{
-	Addr back= 	movn(ROut,dReset ); // reset the Dac Counter
-				movn(ROut, 0 );
-				var cmp0 = R2;
-				movn(cmp0, 0);
-				beginrepeat(R8, 16);	
-					movn(R0, dClock);
-					movn(ROut,0);
-
-					beginrepeat(R1, 16);
-						xor(ROut, R0);
-					endrepeat();
-					beginrepeat(R1, 16);
-						xor(ROut, R0);
-					endrepeat();
-					bit(3, 0);
-					countSetBits(cmp0);		
-				endrepeat();
-				
-				mov(R0, cmp0);
-				mov(R3, cmp0);
-				movto(0);
-				jumpto(back);
-}
-zeroPC("Single 8-bit ADC Value");
-{
-	Addr back= 	movn(ROut,dReset ); // reset the Dac Counter
-				movn(ROut, 0 );
-				var cmp0lsb = R2;
-				var cmp0msb = R3;
-				movn(cmp0lsb, 0);
-				movn(cmp0msb, 0);
-				movn(R0, dClock);
-
-				beginrepeat(R8, 16);	
-					beginrepeat(R1, 16);
-						xor(ROut, R0);
-						xor(ROut, R0);
-						
-						bit(3, 0);
-						skip1(notflag(Zed));
-							inc(cmp0lsb);
-						skip1(notflag(Carry));
-							inc(cmp0msb);	
-	 				endrepeat();						
-				endrepeat();
-				
-				mov(R0, cmp0lsb);
-				mov(R4, cmp0lsb);
-				movto(16);
-
-				mov(R0, cmp0msb);
-				mov(R5, cmp0msb);
-				movto(17);
-			jumpto(back);
-}
-
-zeroPC("ADC 4-bit values to the store");
-{
-Addr back= movn(ROut,dReset ); // reset the Dac Counter
-				movn(ROut, 0 );
-				var cmp0 = R2;
-				var cmp1 = R3;
-				var cmp2 = R4;
-				var cmp3 = R5;
-				var cmp4 = R6;
-				var cmp5 = R7;
-				movn(cmp0, 0);
-				movn(cmp1, 0);
-				movn(cmp2, 0);
-				movn(cmp3, 0);
-				movn(cmp4, 0);				
-				movn(cmp5, 0);
-				beginrepeat(R8, 16);	
-					movn(R0, dClock);
-					movn(ROut,0);
-
-					beginrepeat(R1, 16);
-						xor(ROut, R0);
-					endrepeat();
-					beginrepeat(R1, 16);
-						xor(ROut, R0);
-					endrepeat();
-
-					bit(3, 0);
-					countSetBits(cmp0);
-					bit(3, 1);
-					countSetBits(cmp1);
-					bit(3, 2);
-					countSetBits(cmp2);
-									
-					movn(ROut,dBank);
-					bit(3, 0);
-					countSetBits(cmp3);
-					bit(3, 1);
-					countSetBits(cmp4);
-					bit(3, 2);
-					countSetBits(cmp5);
-
-				endrepeat();
-				
-				mov(R0, cmp0);
-				movto(0);
-				mov(R0, cmp1);
-				movto(1);	
-				mov(R0, cmp2);
-				movto(2);
-				mov(R0, cmp3);
-				movto(3);
-				mov(R0, cmp4);
-				movto(4);
-				mov(R0, cmp5);
-				movto(5);			
-				jumpto(back);
-}
-}
-
-
-main()
-{
-	SimpleExamples();
-	CustomDacExamples();
 }
