@@ -1,6 +1,8 @@
 #include <stdio.h>
-#include "badgeoutput.h"
+#include "badgeAssemblerOutput.h"
 
+// we have to store the code  because the output format
+// requires a length
 unsigned code[4096];
 int pc  = 0;
 void zeroPC(char *s)
@@ -36,6 +38,7 @@ void output()
 	//length
 	putchar(pc&0xff);
 	putchar(pc>>8);
+	//code
 	for(int i = 0; i<pc; ++i)
 	{
 		putchar(code[i]&0xff);

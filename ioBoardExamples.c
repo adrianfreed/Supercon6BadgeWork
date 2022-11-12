@@ -1,23 +1,5 @@
-#include "badgeassembler.h"
-#include "badgeoutput.h" 
-
-void SimpleExamples()
-{
-
-	zeroPC("counter to output port");
-	{			
-		Addr back = inc(R0);
-					mov(ROut, R0);
-					beginrepeat(R8, 16);	
-						beginrepeat(R1, 16);
-							nop();
-						endrepeat();
-					endrepeat();
-					jumpto( back);
-	}		
-	output();
-		
-}
+#include "badgeAssembler.h"
+#include "badgeAssemblerOutput.h" 
 
 
 // Examples for  DAC/Comparator board with custom chip for the badge
@@ -212,6 +194,5 @@ output();
 
 int main()
 {
-	SimpleExamples();
 	CustomDacExamples();
 }

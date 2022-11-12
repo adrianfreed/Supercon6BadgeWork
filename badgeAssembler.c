@@ -1,10 +1,17 @@
 #include <stdio.h>
 #include "badgeAssembler.h"
-#include "badgeoutput.h"
-// Simple Assembler for the Supercon.6 badge
+#include "badgeAssemblerOutput.h"
+//
+// Simple Assembler/Code Synthesizer for the Supercon.6 badge
+// This first version uses a single pass 
 // Adrian Freed 2022
 
-
+// This is dedicated to the memory of Kathleen Booth
+// who was part of a small team that built some of the earliest digital computers,
+// programmed them and designed one of the first assembler languages.
+// She was a pioneering researcher on neural networks and wrote important influential
+// books on programming in the 1950s.
+//
 extern int pc;
 // Names
 const Nibble Carry = 0;

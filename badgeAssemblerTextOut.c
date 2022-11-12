@@ -1,12 +1,12 @@
 #include <stdio.h>
-#include "badgeoutput.h"
+#include "badgeAssemblerOutput.h"
 int pc = 0; // program counter - to track code location for relative move calculations
 void zeroPC(char *s)
 {	
 	pc = 0;
 	printf("%s\n", s);
 }
-// output the binary version in a way that is helpful to toggle in
+// output the binary instructions in a way that is helpful to toggle in
 unsigned lastinstruction = 0;
 int pb(unsigned n)
 {

@@ -1,10 +1,10 @@
-#include "badgeassembler.h"
-#include "badgeoutput.h" 
+#include "badgeAssembler.h"
+#include "badgeAssemblerOutput.h" 
 
 int main()
 {
 
-	zeroPC("counter to output port");
+	zeroPC("Counter to output port:");
 	{			
 		Addr back = inc(R0);
 					mov(ROut, R0);
